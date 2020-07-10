@@ -6,9 +6,9 @@ import sys
 # Set up command line flags
 parser = argparse.ArgumentParser(description='Type of Profiling you want to exectute')
 parser.add_argument('-p', '--port', type=int, metavar='', required=True)
-parser.add_argument('-H', '--heap', action='store_true', help="Add heap profile")
-parser.add_argument('-b', '--blocking', action='store_true', help="Add blocking profile")
-parser.add_argument('-m', '--mutex', action='store_true', help="Add mutex profile")
+parser.add_argument('-H', '--heap', action='store_true', default=False, help="Add heap profile")
+parser.add_argument('-b', '--block', action='store_true', default=False, help="Add blocking profile")
+parser.add_argument('-m', '--mutex', action='store_true', default=False, help="Add mutex profile")
 parser.add_argument('-c', '--cpu', default=0, type=int, help="Add cpu profile for x seconds")
 parser.add_argument('-t', '--tracing', default=0, type=int, help="Add tracing profile for x seconds")
 args = parser.parse_args()
@@ -20,7 +20,13 @@ for arg in vars(args):
   if isinstance(attr, bool):
     if attr == True:
       sum += 1
+      print("attr: " + str(arg))
+if args.cpu != 0:
+    sum += 1
+if args.tracing != 0:
+    sum += 1
 if sum != 1:
+  print("sum: " + str(sum))
   print("Error: Need to have exactly one profiling flag set")
   sys.exit()
 
@@ -67,9 +73,9 @@ elif args.block:
 elif args.mutex:
   profileType = 'mutex'
 elif args.cpu:
-  profileType = 'profile?seconds' + str(args.c)
+  profileType = 'profile?seconds' + str(args.cpu)
 elif args.tracing:
-  profileType = 'trace?seconds' + str(args.t)
+  profileType = 'trace?seconds' + str(args.tracing)
 
 # Use go tool to generate profile
 baseStr = ["go", "tool", "pprof", "http://localhost:" + portNum + "/debug/pprof/" + profileType]
@@ -81,4 +87,4 @@ profProcess = subprocess.run(baseStr, input= str_var.encode('utf-8'))
 
 # Kill port-forward process so we can do this again without manually killing
 subprocess.run(["echo", "Killing port forward process..."])
-subprocess.run(["kill", str(pfPid)])
+subprocess.run(["kill", str(pfProcess.pid)])
