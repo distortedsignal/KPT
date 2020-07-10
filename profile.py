@@ -5,7 +5,8 @@ import sys
 
 # Set up command line flags
 parser = argparse.ArgumentParser(description='Type of Profiling you want to exectute')
-parser.add_argument('-p', '--port', type=int, metavar='', required=True)
+parser.add_argument('-p', '--port', type=int, metavar='', required=True, help="Port you wish to access profiling endpoints from")
+parser.add_argument('--pod', type=str, required=False, help="Pod you wish to profile within")
 parser.add_argument('-H', '--heap', action='store_true', default=False, help="Add heap profile")
 parser.add_argument('-b', '--block', action='store_true', default=False, help="Add blocking profile")
 parser.add_argument('-m', '--mutex', action='store_true', default=False, help="Add mutex profile")
@@ -42,18 +43,25 @@ if kV.stderr:
   print(error)
   sys.exit()
 
-# Find the name of the kubedirector pod
-# First find starting index
-index = output.find('kubedirector')
-# Kubedirector pod not found
-if index == -1:
-  print('Kubedirector pod could not be found')
+# If we already have the podName, move on. Otherwise, find the kubedirector pod name
+if args.pod:
+  podName = args.pod
+else:
+  # First find starting index
+  index = output.find('kubedirector')
+  # Kubedirector pod not found
+  if index == -1:
+    print('Kubedirector pod could not be found')
+    sys.exit()
+  podName = ''
+  # Starting with index, add each character from kubedirector pod name until we reach a space 
+  while output[index] != ' ':
+    podName += output[index]
+    index += 1
+err = output.find(podName)
+if err == -1:
+  print("Pod could not be found") 
   sys.exit()
-podName = ''
-# Starting with index, add each character from kubedirector pod name until we reach a space 
-while output[index] != ' ':
-  podName += output[index]
-  index += 1
 print("Pod name: " + podName) 
 
 # Get port num from command line args
