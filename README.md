@@ -16,6 +16,15 @@ CLA Notes:
 - You may only select one type of profiling. So you should have exactly two command line arguments: Port and a Profile Type.
 
 ## Usage
+ MAJOR NOTE: This tool is designed for Go programs running within a container, which itself is running in a Kubernetes pod. Your main function must have the following block of code:
+```
+go func() {
+	log.Println(http.ListenAndServe("localhost:6060", nil))
+}()
+```
+You may, however, choose your own port number. Otherwise, if this is not your situation, the tool will almost certainly not work.
+
+Steps:
 - All current pods will be checked, and the first kubedirector pod will be identified. (Tool only currently works for KubeDirector)
 - The tool will execute a "kubectl port-forward" command on this pod to redirect it's localhost to the outer port that you've specified in the CLA. 
 - The tool will execute a "go tool pprof <profile-endpoint>" command to creating the profile (or start it, if cpu or tracing) 
