@@ -5,16 +5,17 @@ import sys
 
 # Set up command line flags
 parser = argparse.ArgumentParser(description='Type of Profiling you want to exectute')
-parser.add_argument('-p', '--port', type=int, metavar='', required=True, help="Port you wish to access profiling endpoints from")
+parser.add_argument('-p', '--port', type=int, required=True, help="Port you wish to access profiling endpoints from")
 parser.add_argument('--pod', type=str, required=False, help="Pod you wish to profile within")
 parser.add_argument('-H', '--heap', action='store_true', default=False, help="Add heap profile")
 parser.add_argument('-b', '--block', action='store_true', default=False, help="Add blocking profile")
 parser.add_argument('-m', '--mutex', action='store_true', default=False, help="Add mutex profile")
 parser.add_argument('-c', '--cpu', default=0, type=int, help="Add cpu profile for x seconds")
 parser.add_argument('-t', '--tracing', default=0, type=int, help="Add tracing profile for x seconds")
+parser.add_argument('-a', '--app', type=str, required=False, help="Application you wish to instrument. Acceptable tags include: kubedirector, kd, hpecp-agent, hpecpagent, agent")
 args = parser.parse_args()
 
-# Check that only one profile was requested
+# Check that exactly one profile was requested
 sum = 0
 for arg in vars(args):
   attr = getattr(args, arg)
@@ -43,21 +44,32 @@ if kV.stderr:
   print(error)
   sys.exit()
 
-# If we already have the podName, move on. Otherwise, find the kubedirector pod name
-if args.pod:
-  podName = args.pod
-else:
+# If we're not given the pod name, check if we're given an application. If we're not, exit and ask for an app/pod
+if not (args.pod):
+  if (args.app == 'kd' or args.app == 'kubedirector'):
+    app = "kubedirector"
+  elif (args.app == 'hpecp-agent' or args.app == 'agent' or args.app == 'hpecpagent'):
+    app = "hpecp-agent"
+  else:
+    print("Application unrecognized or missing. Please provide a valid application or pod name")
+    sys.exit()
+  # Now, formulate pod name based off application name
   # First find starting index
-  index = output.find('kubedirector')
-  # Kubedirector pod not found
+  index = output.find(app)
+  # App's pod not found
   if index == -1:
-    print('Kubedirector pod could not be found')
+    print('Pod could not be found. Make sure you have an hpecp-agent or kubedirector pod active.')
     sys.exit()
   podName = ''
-  # Starting with index, add each character from kubedirector pod name until we reach a space 
+  # Starting with index, add each character from app's pod name until we reach a space 
   while output[index] != ' ':
     podName += output[index]
     index += 1
+else:
+  # Pod name was provided, just use that
+  podName = args.pod
+
+# Check that valid pod was found
 err = output.find(podName)
 if err == -1:
   print("Pod could not be found") 

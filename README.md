@@ -1,10 +1,11 @@
 # KPT - Kubernetes Profiling Tool
 
-This is a simple python script to ease the process of profiling Go applications that are contained within a Kubernetes pod/cluster. It takes two command line flags, one for the port you wish to access the profiling data on, and one for the type of profiling. 
+This is a simple python script to ease the process of profiling Go applications that are contained within a Kubernetes pod/cluster. Currently only functional for kubedirector or hpecp-agent applications, or other applications if set up correctly and contained within a given pod
 
 ## Command Line Arguments
 - --port, -p (int): Desginates the port you want to use to access profiling endpoints. 
 - --pod (str): Designates the pod that you wish to profile within
+- --app, -a (str): Designates the application that you wish to instrument (Options include: kubedirector, kd , hpecp-agent, hpecpagent, agent)
 - --heap, -H (bool): Enables heap profiling
 - --block, -b (bool): Enable goroutine blocking profiling
 - --mutex, -m (bool): Enables mutex profiling
@@ -22,7 +23,8 @@ go func() {
 	log.Println(http.ListenAndServe("localhost:6060", nil))
 }()
 ```
-You may, however, choose your own port number. Otherwise, if this is not your situation, the tool will almost certainly not work.
+You may, however, choose your own port number. Otherwise, if this is not your situation, the tool will not work.
+Also, you must be able to run kubectl commands on whatever machine you are currently using, as you need to be able to access cluster nodes and pods for this to work. 
 
 Steps:
 - All current pods will be checked, and the first kubedirector pod will be identified. (Tool only currently works for KubeDirector)
