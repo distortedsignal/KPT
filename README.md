@@ -12,9 +12,8 @@ This is a simple python script to ease the process of profiling Go applications 
 - --cpu, -c (int): Enables cpu profiling for a user-determined number of seconds.
 - --tracing, -t (int): Enables execution tracing for a user-determined number of seconds
 
-CLA Notes:
+CLA Note:
 - When profiling for a certain amount of time (cpu and tracing), the tool will start the profiling, but it's up to the user to perform actions they want to be profiled on a separate terminal window. The tool will not provide the user with a terminal to perform commands. It will simply wait until the time frame has elapsed and then show the user the results.
-- You may only select one type of profiling. So you should have exactly two command line arguments: Port and a Profile Type.
 
 ## Usage
  MAJOR NOTE: This tool is designed for Go programs running within a container, which itself is running in a Kubernetes pod. Your main function must have the following block of code:
