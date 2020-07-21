@@ -23,18 +23,16 @@ go func() {
 	log.Println(http.ListenAndServe("localhost:6060", nil))
 }()
 ```
-You may, however, choose your own port number. Otherwise, if this is not your situation, the tool will not work.
-Also, you must be able to run kubectl commands on whatever machine you are currently using, as you need to be able to access cluster nodes and pods for this to work. 
+
+If you do not have this, you may receive an error message with something along the lines of: "Connect: Connection Refused. Failed to fetch source profiles."
+You may also choose your own port number to set up the server on, 6060 is merely an example. See the --port command line argument
+Lastly, you must be able to run kubectl commands on whatever machine you are currently using, as you need to be able to access cluster nodes and pods for this to work. 
 
 Steps:
 - All current pods will be checked, and the first kubedirector pod will be identified. (Tool only currently works for KubeDirector)
 - The tool will execute a "kubectl port-forward" command on this pod to redirect it's localhost to the outer port that you've specified in the CLA. 
 - The tool will execute a "go tool pprof <profile-endpoint>" command to creating the profile (or start it, if cpu or tracing) 
-- After the profile is created, the pprof CLI is activated. However, the tool will immediately exit this CLI to properly execute clean-up operations. The output tells the user the location of the profile, and from there it is a simple command to get back to that CLI:
-``` 
-    go tool pprof <profile-file>
-```
-
+- The tool will immediately exit out of the pprof CLI in order to clean up the kubectl process, but it will reactivate it using the file path immediately after
 
 ## Common Error
 If you get an error message that says something about a port already being used, you must manually kill the port-forward process on your machine. There are certain special cases where this may occur. Start by retrieving the processes on your machine:

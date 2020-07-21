@@ -22,13 +22,11 @@ for arg in vars(args):
   if isinstance(attr, bool):
     if attr == True:
       sum += 1
-      print("attr: " + str(arg))
 if args.cpu != 0:
     sum += 1
 if args.tracing != 0:
     sum += 1
 if sum != 1:
-  print("sum: " + str(sum))
   print("Error: Need to have exactly one profiling flag set")
   sys.exit()
 
@@ -53,15 +51,16 @@ if not (args.pod):
   else:
     print("Application unrecognized or missing. Please provide a valid application or pod name")
     sys.exit()
-  # Now, formulate pod name based off application name
-  # First find starting index
+
+  # Formulate pod name based off application name
+  # Find starting index
   index = output.find(app)
   # App's pod not found
   if index == -1:
     print('Pod could not be found. Make sure you have an hpecp-agent or kubedirector pod active.')
     sys.exit()
   podName = ''
-  # Starting with index, add each character from app's pod name until we reach a space 
+  # Starting with index, add each character from app's pod name until we reach a space (the end) 
   while output[index] != ' ':
     podName += output[index]
     index += 1
@@ -80,9 +79,9 @@ print("Pod name: " + podName)
 portNum = str(args.port)
 
 # Forward localhost of pod to outside port of user's preference
-pfProcess = subprocess.Popen(["kubectl", "port-forward", podName, "6060"])
+pfProcess = subprocess.Popen(["kubectl", "port-forward", podName, portNum])
 
-# Need to sleep for a short time period so port-forward operation can run. Otherwise, connection fails
+# Need to sleep for a short time period so port-forward operation can run. Otherwise, connection fails (try to find way to not hardcode this, wait() or something) 
 time.sleep(.2)
 
 # Parse out profile type from command line args
@@ -102,9 +101,24 @@ baseStr = ["go", "tool", "pprof", "http://localhost:" + portNum + "/debug/pprof/
 
 # Command to issue to pprof upon startup
 str_var = "exit"
+
 # Encode to bytes so it's readable by system
-profProcess = subprocess.run(baseStr, input= str_var.encode('utf-8'))
+profProcess = subprocess.run(baseStr, stderr=subprocess.PIPE, stdout=subprocess.PIPE, input= str_var.encode('utf-8'))
+
+# Find file path within stderr
+error = profProcess.stderr.decode('ascii')
+initialInd = error.find("Saved profile in")
+pathInd = initialInd + 17
+path = ''
+while error[pathInd] != ' ':
+    path += error[pathInd]
+    pathInd += 1
+print("Profile Path: " + path)
 
 # Kill port-forward process so we can do this again without manually killing
-subprocess.run(["echo", "Killing port forward process..."])
+subprocess.run(["echo", "Killing kubectl process..."])
 subprocess.run(["kill", str(pfProcess.pid)])
+
+# Access profile for user
+runStr = "go tool pprof " + path
+subprocess.run(runStr, shell=True)
