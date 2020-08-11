@@ -4,6 +4,7 @@ This is a simple python script to ease the process of profiling Go applications 
 
 ## Command Line Arguments
 - --port, -p (int): Desginates the port you want to use to access profiling endpoints. 
+**NOTE** : As of now, the port argument assumes that your local and remote port will be the same. So if you have -p 6060, it will forward 6060 locally to 6060 remotely.
 - --pod (str): Designates the pod that you wish to profile within
 - --app, -a (str): Designates the application that you wish to instrument (Options include: kubedirector, kd , hpecp-agent, hpecpagent, agent)
 - --heap, -H (bool): Enables heap profiling
