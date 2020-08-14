@@ -92,18 +92,18 @@ elif args.block:
 elif args.mutex:
   profileType = 'mutex'
 elif args.cpu:
-  profileType = 'profile?seconds' + str(args.cpu)
+  profileType = 'profile?seconds=' + str(args.cpu)
 elif args.tracing:
-  profileType = 'trace?seconds' + str(args.tracing)
+  profileType = 'trace?seconds=' + str(args.tracing)
 
 # Use go tool to generate profile
-baseStr = ["go", "tool", "pprof", "http://localhost:" + portNum + "/debug/pprof/" + profileType]
+base_str = ["go", "tool", "pprof", "http://localhost:" + portNum + "/debug/pprof/" + profileType]
 
 # Command to issue to pprof upon startup
 str_var = "exit"
 
 # Encode to bytes so it's readable by system
-profProcess = subprocess.run(baseStr, stderr=subprocess.PIPE, stdout=subprocess.PIPE, input= str_var.encode('utf-8'))
+profProcess = subprocess.run(base_str, stderr=subprocess.PIPE, stdout=subprocess.PIPE, input= str_var.encode('utf-8'))
 
 # Find file path within stderr
 error = profProcess.stderr.decode('ascii')
