@@ -84,41 +84,54 @@ pfProcess = subprocess.Popen(["kubectl", "port-forward", podName, portNum])
 # Need to sleep for a short time period so port-forward operation can run. Otherwise, connection fails (try to find way to not hardcode this, wait() or something) 
 time.sleep(.2)
 
-# Parse out profile type from command line args
-if args.heap:
-  profileType = 'heap'
-elif args.block:
-  profileType = 'block'
-elif args.mutex:
-  profileType = 'mutex'
-elif args.cpu:
-  profileType = 'profile?seconds=' + str(args.cpu)
-elif args.tracing:
+#Handle different profile types, start with trace, then move on to pprof types
+if args.tracing:
+  # Tracing has different requirements from the other profile types, we'll handle that first
   profileType = 'trace?seconds=' + str(args.tracing)
+  path = input("You selected tracing, please enter a filepath for your trace file: ")
+  trace_str = ["wget", "-O", path, "http://localhost:" + portNum + "/debug/pprof/" + profileType]
+  subprocess.run(trace_str)
+else:
+  # Parse out profile type from command line args
+  if args.heap:
+    profileType = 'heap'
+  elif args.block:
+    profileType = 'block'
+  elif args.mutex:
+    profileType = 'mutex'
+  elif args.cpu:
+    profileType = 'profile?seconds=' + str(args.cpu)
+  else:
+    print("Profile type not detected, exiting...")
+    sys.exit()
 
-# Use go tool to generate profile
-base_str = ["go", "tool", "pprof", "http://localhost:" + portNum + "/debug/pprof/" + profileType]
+  # Use go tool to generate profile
+  base_str = ["go", "tool", "pprof", "http://localhost:" + portNum + "/debug/pprof/" + profileType]
 
-# Command to issue to pprof upon startup
-str_var = "exit"
+  # Command to issue to pprof upon startup
+  str_var = "exit"
 
-# Encode to bytes so it's readable by system
-profProcess = subprocess.run(base_str, stderr=subprocess.PIPE, stdout=subprocess.PIPE, input= str_var.encode('utf-8'))
+  # Encode to bytes so it's readable by system
+  profProcess = subprocess.run(base_str, stderr=subprocess.PIPE, stdout=subprocess.PIPE, input= str_var.encode('utf-8'))
 
-# Find file path within stderr
-error = profProcess.stderr.decode('ascii')
-initialInd = error.find("Saved profile in")
-pathInd = initialInd + 17
-path = ''
-while error[pathInd] != ' ':
-    path += error[pathInd]
-    pathInd += 1
-print("Profile Path: " + path)
+  # Find file path within stderr
+  error = profProcess.stderr.decode('ascii')
+  initialInd = error.find("Saved profile in")
+  pathInd = initialInd + 17
+  path = ''
+  while error[pathInd] != ' ':
+      path += error[pathInd]
+      pathInd += 1
+  print("Profile Path: " + path)
 
 # Kill port-forward process so we can do this again without manually killing
 subprocess.run(["echo", "Killing kubectl process..."])
 subprocess.run(["kill", str(pfProcess.pid)])
 
-# Access profile for user
-runStr = "go tool pprof " + path
+# Access profile/trace for user
+if args.tracing:
+  tool = 'trace'
+else:
+  tool = "pprof"
+runStr = "go tool " + tool + " " + path
 subprocess.run(runStr, shell=True)

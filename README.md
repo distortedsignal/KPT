@@ -15,6 +15,7 @@ This is a simple python script to ease the process of profiling Go applications 
 
 CLA Note:
 - When profiling for a certain amount of time (cpu and tracing), the tool will start the profiling, but it's up to the user to perform actions they want to be profiled on a separate terminal window. The tool will not provide the user with a terminal to perform commands. It will simply wait until the time frame has elapsed and then show the user the results.
+- Analyzing a trace will require Google chrome. If using a headless machine, the trace will still be created but the script will obviously fail to launch the browser.
 
 ## Usage
  MAJOR NOTE: This tool is designed for Go programs running within a container, which itself is running in a Kubernetes pod. Your main function must have the following block of code:
