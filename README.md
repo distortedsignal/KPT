@@ -3,8 +3,10 @@
 This is a simple python script to ease the process of profiling Go applications that are contained within a Kubernetes pod/cluster. Currently only functional for kubedirector or hpecp-agent applications, or other applications if set up correctly and contained within a given pod
 
 ## Command Line Arguments
-- --port, -p (int): Desginates the port you want to use to access profiling endpoints. 
-**NOTE** : As of now, the port argument assumes that your local and remote port will be the same. So if you have -p 6060, it will forward 6060 locally to 6060 remotely.
+- --localport, -l (int): Local port to be used in kubectl port-forward command. This is the port you wish to access profiling endpoints from. 
+- --remoteport, -r (int): Remote port to be used in kubectl port-forward command. This is the port you start your server on in your code
+- --port, -p (int): Shorthand for when localport=remoteport. This option overrides local and remote port options if all are set  
+Regarding Ports:  Since the commands are run for the user, it should be no trouble to use this easier -p option and use the same port numbers. However some ports may already be in use, so we have specific options for local and remote ports as well. 
 - --pod (str): Designates the pod that you wish to profile within
 - --app, -a (str): Designates the application that you wish to instrument (Options include: kubedirector, kd , hpecp-agent, hpecpagent, agent)
 - --heap, -H (bool): Enables heap profiling

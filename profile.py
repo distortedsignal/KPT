@@ -5,7 +5,9 @@ import sys
 
 # Set up command line flags
 parser = argparse.ArgumentParser(description='Type of Profiling you want to exectute')
-parser.add_argument('-p', '--port', type=int, required=True, help="Port you wish to access profiling endpoints from")
+parser.add_argument('-l', '--localport', type=int, required=False, help="Local port to be used in kubectl port-forward command. This is the port you wish to access profiling endpoints from.")
+parser.add_argument('-r', '--remoteport', type=int, required=False, help="Remote port to be used in kubectl port-forward command. This is the port you start your server on in your code")
+parser.add_argument('-p', '--port', type=int, required=False, help="Port you wish to access profiling endpoints from. Shorthand option for when localport and remoteport are the same. Overrides other port options if both are selected")
 parser.add_argument('--pod', type=str, required=False, help="Pod you wish to profile within")
 parser.add_argument('-H', '--heap', action='store_true', default=False, help="Add heap profile")
 parser.add_argument('-b', '--block', action='store_true', default=False, help="Add blocking profile")
@@ -75,11 +77,20 @@ if err == -1:
   sys.exit()
 print("Pod name: " + podName) 
 
-# Get port num from command line args
-portNum = str(args.port)
+# Check for port number from CLA
+if args.port:
+  localPort = str(args.port)
+  remotePort = str(args.port)
+elif args.localport and args.remoteport:
+  localPort = str(args.localport)
+  remotePort = str(args.remoteport)
+else:
+  print("Make sure to specify either --port, or both --localport and --remoteport")
+  sys.exit()
 
 # Forward localhost of pod to outside port of user's preference
-pfProcess = subprocess.Popen(["kubectl", "port-forward", podName, portNum])
+portStr = localPort + ":" + remotePort
+pfProcess = subprocess.Popen(["kubectl", "port-forward", podName, portStr])
 
 # Need to sleep for a short time period so port-forward operation can run. Otherwise, connection fails (try to find way to not hardcode this, wait() or something) 
 time.sleep(.2)
@@ -89,7 +100,7 @@ if args.tracing:
   # Tracing has different requirements from the other profile types, we'll handle that first
   profileType = 'trace?seconds=' + str(args.tracing)
   path = input("You selected tracing, please enter a filepath for your trace file: ")
-  trace_str = ["wget", "-O", path, "http://localhost:" + portNum + "/debug/pprof/" + profileType]
+  trace_str = ["wget", "-O", path, "http://localhost:" + localPort + "/debug/pprof/" + profileType]
   subprocess.run(trace_str)
 else:
   # Parse out profile type from command line args
@@ -106,7 +117,7 @@ else:
     sys.exit()
 
   # Use go tool to generate profile
-  base_str = ["go", "tool", "pprof", "http://localhost:" + portNum + "/debug/pprof/" + profileType]
+  base_str = ["go", "tool", "pprof", "http://localhost:" + localPort + "/debug/pprof/" + profileType]
 
   # Command to issue to pprof upon startup
   str_var = "exit"
